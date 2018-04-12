@@ -12,7 +12,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.net.SocketAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
 
@@ -39,16 +38,27 @@ public class Connect {
         try
         {
             String url = runHTTP(getURLSc("servers.php"));
-            err[0] = url;
-            
+            if (url == null)
+            {
+                return err;
+            }
+            else if (url.contains(", "))
+            {
+                Launcher.servers = url.replaceAll("<br>", "").split("<::>");
+                String[] serversName = new String[Launcher.servers.length];
+                
+                for (int i = 0; i < Launcher.servers.length; i++)
+                {
+                    serversName[i] = Launcher.servers[i].split(", ")[0];
+                }
+                return serversName;
+            }            
             return err;
         }
         catch(Exception e)
         {
-            
+            return err;
         }
-        
-        return err;
     }
 
     private static String runHTTP(String in_url) {
@@ -59,7 +69,10 @@ public class Connect {
         {
             URL url = new URL(in_url);
             
-            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("172.16.1.20", 8080));
+            Proxy proxy = null;
+            
+            if (Setup.isUseProxy())
+               proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(Setup.getAdress(), Setup.getPort()));
             
             ct = (HttpURLConnection)url.openConnection(proxy);
             
