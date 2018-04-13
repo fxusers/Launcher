@@ -22,6 +22,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import static launcher.MainPanel.saveChanges;
 
 /**
  *
@@ -54,23 +55,54 @@ public class Setup extends JFrame {
         return iPort;
     }
     
-    // Использовать прокси ?
-    public static boolean isUseProxy()
+    /**
+     * Получить память
+     */
+    public static int getMemory()
     {
-        return bProxy;
+        return iMemory;
     }
     
-    private JCheckBox  chProxy;    // Прокси чек бокс    
-    private JTextField tProxyAdr;   // Поле Прокси АДРЕС
-    private JTextField tProxyPort;  // Поле Прокси ПОРТ
-    private JSlider    jSlidMem;    // Память
+    // Использовать прокси ?
+   public static boolean isUseProxy()
+   {
+      return bProxy;
+   }
+    
+   public static void setProxy(boolean proxy)
+   {
+      bProxy = proxy;
+      chProxy.setSelected(bProxy);
+   }
+   
+   public static void setAdress(String Adress)
+   {
+      sAdress = Adress;
+      tProxyAdr.setText(sAdress);
+   }
+   
+   public static void setPort(int Port)
+   {
+      iPort = Port;
+      tProxyPort.setText(Integer.toString(iPort));
+   }
+   
+   public static void setMemory(int Memory)
+   {
+      iMemory = Memory;
+      jSlidMem.setValue(iMemory);
+   }
+    
+    private static JCheckBox  chProxy;    // Прокси чек бокс    
+    private static JTextField tProxyAdr;   // Поле Прокси АДРЕС
+    private static JTextField tProxyPort;  // Поле Прокси ПОРТ
+    private static JSlider    jSlidMem;    // Память
     
     public Setup()
     {
         super("Настройка");
         
         setBounds(100, 100, 800, 330);
-        setVisible(true);
         setResizable(false);
         setLayout(null);
         
@@ -191,8 +223,6 @@ public class Setup extends JFrame {
         chProxy.addItemListener   (new ItemListen());
         bDefault.addActionListener(new ActionListen());
         bSave.addActionListener   (new ActionListen());
-        
-        setVisible(true);
     }
     
     public void setFocus()
@@ -240,7 +270,7 @@ public class Setup extends JFrame {
                }
                iMemory = jSlidMem.getValue();
                
-               
+               saveChanges();               
             } break;
          }
       }

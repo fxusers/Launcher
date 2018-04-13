@@ -23,15 +23,15 @@ import java.util.HashMap;
 public class ConfigUtils 
 {
    private File config; // основной файл
-   private String fileName = "";
+   private String fileName = "launcher.cfg";
    private HashMap<String,String> contents;  // Кеш
-   private final String[] params = {"Server", "Login", "Password"};
+   private final String[] params = {"Server", "Login", "Password", "Proxy", "Adress", "Port", "Memory"};
  
    // получить имя файла
    private File getConfigName()
    {
       String home = System.getProperty("user.home", "");
-      String path = File.separator + Launcher.baseconf + File.separator + "launcher.config";
+      String path = File.separator + Launcher.baseconf + File.separator + fileName;
       
       String osName = System.getProperty("os.name").toLowerCase();
 
@@ -97,20 +97,14 @@ public class ConfigUtils
          // Читаем файл
          rd = new BufferedReader(new FileReader(config));
          
-         String line;
+         String line; int i = 0;
          while ((line = rd.readLine()) != null)
          {
-            if ((line.isEmpty()) || (line.startsWith("#")) || (!line.contains(": ")))
+            if (line.isEmpty())
                continue;
             
-            String args[] = line.split(": ");
-            if (args.length < 2)
-            {
-               result.put(args[0], null);
-               continue;
-            }
-            
-            result.put(args[0], args[1]);
+            result.put(params[i], line); i++;
+            continue;
          }         
       }
       catch(IOException e)
@@ -196,9 +190,5 @@ public class ConfigUtils
    public ConfigUtils()
    {
       config = getConfigName();
-      fileName = "/launcher.config";
-      
-      // 
-   }
-   
+   }   
 }

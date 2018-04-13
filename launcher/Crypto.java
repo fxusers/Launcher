@@ -19,6 +19,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.MessageDigest;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -76,6 +77,9 @@ public class Crypto {
    // Зашифровать строку
    public static String encrypt(String input, byte[] key)
    {
+      if (input == null)
+         return null;
+
       byte[] crypted = null;
       try
       {
@@ -86,7 +90,7 @@ public class Crypto {
       }
       catch(Exception e)
       {
-         System.out.println(e);
+         JOptionPane.showMessageDialog(null, e, "Ошибка шифрования", javax.swing.JOptionPane.ERROR_MESSAGE, null);
          System.exit(0);
       }
       // Строка в формате BASE64
@@ -96,6 +100,9 @@ public class Crypto {
    // Попытка дешифровки (Шифрованная строка и ключ)
    public static String decrypt(String input, byte[] key)
    {
+      if (input == null)
+         return "";
+      
       byte[] output = null;
       
       try
@@ -112,8 +119,10 @@ public class Crypto {
             IllegalBlockSizeException | 
             InvalidKeyException |
             BadPaddingException |
-            IOException e)
+            NullPointerException |
+            IOException e )
       {
+         JOptionPane.showMessageDialog(null, e, "Ошибка дешифрования", javax.swing.JOptionPane.ERROR_MESSAGE, null);
          System.out.println(e);
          System.exit(0);
       }

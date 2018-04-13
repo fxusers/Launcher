@@ -42,8 +42,10 @@ public class Launcher {
     public static final String  siteDir = "minecrafttest";  // Папка с файлами лаунчера на сайте
     public static final String http     = "http://";        // Протокол подключения https:// если есть ssl сертификат
     public static final String baseconf = "Olympus";
-    
     public static String servers[]={};
+    public static final String key2 = "2222222222222222"; //16 Character Key Ключ пост запросов
+    public static final String key1 = "1111111111111111";
+    public static final String masterVersion = "5566"; //Версия лаунчера
 
     /**
      * @param args the command line arguments
@@ -57,11 +59,13 @@ public class Launcher {
 
 class MainPanel extends JFrame
 {
-   private JComboBox        cServer;
-   private JPasswordField fPassword;
-   private JTextField        fLogin;
-   private ConfigUtils configUtils;
-   private byte[]         secredKey;
+   public static String current_server = "Offline";
+   private static JComboBox        cServer;
+   private static JPasswordField fPassword;
+   private static JTextField        fLogin;
+   private static ConfigUtils  configUtils;
+   private static Setup              setup;
+   private static byte[]  secredKey;
 
    public MainPanel()
    {
@@ -77,9 +81,10 @@ class MainPanel extends JFrame
       label.setBounds(20, 18, 150, 30);
       label.setFont(new Font("Tahoma", 0, 18)); // NOI18N
 
-      cServer = new JComboBox(getServerName());
+      cServer = new JComboBox();
       cServer.setFont(new Font("Tahoma", 0, 18));
       cServer.setBounds(180, 13, 200, 40);
+      cServer.addItem(new String("Offline"));
       // <== Выбор сервера
 
       fLogin = new JTextField("Логин");
@@ -116,36 +121,121 @@ class MainPanel extends JFrame
 
       jTextPane1.setEditable(false);
 
-      bSetup.addActionListener(e->{ new Setup(); } );
+      bSetup.addActionListener(e->{ setup.setVisible(true); } );
       bAutor.addActionListener(new ActionListen());
-
       setVisible(true);
-
+      
+      secredKey   = Crypto.getKey();
+      setup       = new Setup();
       configUtils = new ConfigUtils();
-      configUtils.load();
-      // String pass = configUtils.getPropertyString("password");
 
-      // Получить уникальный ключ для шифрования.
-      secredKey = Crypto.getKey();
-      //String pass = Crypto.encrypt("Филипп_кукушка123", secredKey);
-      //System.out.println(pass);
-      //System.out.println(Crypto.decrypt(pass, secredKey));
+      LoadSetup();
+      
+      // Получить список серверов
+      for (String a: getServerName())
+      {
+         cServer.addItem(a);
+      }
+      
+      if (!current_server.matches("Offline") )
+         cServer.setSelectedItem(current_server);
+   }
+   
+   public static void LoadSetup()
+   {
+      configUtils.load();
+      
+      current_server = Crypto.decrypt(configUtils.getPropertyString("Server"), secredKey);
+      if (current_server == null)
+         current_server = "Offline";
+      cServer.setSelectedItem(current_server);
+      
+      String Login = Crypto.decrypt(configUtils.getPropertyString("Login"), secredKey);
+      if (Login.trim().length() == 0)
+         fLogin.setText("Логин");
+      else
+         fLogin.setText(Login);
+      
+      String Password = Crypto.decrypt(configUtils.getPropertyString("Password"), secredKey);
+      if (Password.trim().length() == 0)
+         fPassword.setText("Пароль");
+      else
+         fPassword.setText(Password);
+      
+      setup.setProxy(Crypto.decrypt(configUtils.getPropertyString("Proxy"), secredKey).matches("1"));
+      setup.setAdress(Crypto.decrypt(configUtils.getPropertyString("Adress"), secredKey));
+      
+      try
+      {
+         setup.setPort(Integer.parseInt(Crypto.decrypt(configUtils.getPropertyString("Port"), secredKey)));
+      }
+      catch (NumberFormatException e)
+      {
+         setup.setPort(0);
+      }
+      
+      try
+      {
+         setup.setMemory(Integer.parseInt(Crypto.decrypt(configUtils.getPropertyString("Memory"), secredKey)));
+      }
+      catch (NumberFormatException e)
+      {
+         setup.setMemory(setup.getMemory());
+      }      
+   }
+
+   public static void saveChanges()
+   {
+      String sLogin;
+      if (fLogin.getText().trim().length() == 0)
+         sLogin    = Crypto.encrypt("Логин", secredKey);
+      else
+         sLogin    = Crypto.encrypt(fLogin.getText(), secredKey);
+
+      String sPassword;
+      if (fPassword.getPassword()[0] != 0)
+         sPassword = Crypto.encrypt(new String(fPassword.getPassword()), secredKey);
+      else
+         sPassword = Crypto.encrypt("Пароль", secredKey);
+      
+      String sServer   = Crypto.encrypt((String) cServer.getSelectedItem(), secredKey);
+      String sProxy    = Crypto.encrypt(setup.isUseProxy() ? "1" : "0", secredKey);
+      String sAdress   = Crypto.encrypt(setup.getAdress(), secredKey);
+      String sPort     = Crypto.encrypt(String.valueOf(setup.getPort()), secredKey);
+      String sMemory   = Crypto.encrypt(String.valueOf(setup.getMemory()), secredKey);
+
+      configUtils.setPropertyString("Server",   sServer);
+      configUtils.setPropertyString("Login",    sLogin);
+      configUtils.setPropertyString("Password", sPassword);
+      configUtils.setPropertyString("Proxy",    sProxy);
+      configUtils.setPropertyString("Adress",   sAdress);
+      configUtils.setPropertyString("Port",     sPort);
+      configUtils.setPropertyString("Memory",   sMemory);
+      configUtils.flush();         
    }
     
-    class ActionListen implements ActionListener
-    {
-
-      @Override
+   class ActionListen implements ActionListener
+   {
+     @Override
       public void actionPerformed(ActionEvent e) 
-      {         
-         String sLogin    = Crypto.encrypt(fLogin.getText(), secredKey);
-         String sPassword = Crypto.encrypt(new String(fPassword.getPassword()), secredKey);
-         String sServer   = Crypto.encrypt((String) cServer.getSelectedItem(), secredKey);
-
-         configUtils.setPropertyString("Server",   sServer);
-         configUtils.setPropertyString("Login",    sLogin);
-         configUtils.setPropertyString("Password", sPassword);
-         configUtils.flush();
+      {
+         saveChanges();
+         Auth.auth();
       }
-    }
+   }
+
+   public static String getClientName()
+   {
+      return ((String) cServer.getSelectedItem()).replaceAll(" ", "");
+   }
+   
+   public static String getLogin()
+   {
+      return fLogin.getText();
+   }
+  
+   public static String getPassword()
+   {
+      return new String(fPassword.getPassword());
+   }
 }
